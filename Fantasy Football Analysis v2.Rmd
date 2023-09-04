@@ -72,8 +72,10 @@ projections2019 <- read_csv("https://raw.githubusercontent.com/jsoslow2/Fantasy-
 projections2020 <- read_csv("https://raw.githubusercontent.com/jsoslow2/Fantasy-Football-Models/master/data/projections/2020%20projections%20updated%20-%20ff%202020%20projections%20positional.csv")
 projections2021 <- read_csv("https://raw.githubusercontent.com/jsoslow2/Fantasy-Football-Models/master/data/projections/2021%20projections%20-%202021%20projections%20pdf.csv.csv")
 projections2022 <- read_csv("https://raw.githubusercontent.com/jsoslow2/Fantasy-Football-Models/master/data/projections/2022%20nfl%20projections%20-%20nfl%20ppr%202022%20rankings.csv.csv")
+projections2023 <- read_csv("https://raw.githubusercontent.com/jsoslow2/Fantasy-Football-Models/master/data/projections/2023%20projections%20-%20NFL23_CS_PPR300.csv.csv")
 
 
+depthChart2023 <- read_csv("https://raw.githubusercontent.com/jsoslow2/Fantasy-Football-Models/master/data/depth%20charts/2023%20depth%20charts%20-%20NFL23_CS_Depth.csv.csv")
 depthChart2022 <- read_csv("https://raw.githubusercontent.com/jsoslow2/Fantasy-Football-Models/master/data/depth%20charts/2022%20depth%20charts%20-%202022%20depth%20charts.csv.csv")
 depthChart2021 <- read_csv("https://raw.githubusercontent.com/jsoslow2/Fantasy-Football-Models/master/data/depth%20charts/2021%20depth%20charts%20-%202021%20depth%20charts.csv.csv")
 depthChart2020 <- read_csv("https://raw.githubusercontent.com/jsoslow2/Fantasy-Football-Models/master/data/depth%20charts/2020%20depth%20charts%20-%20NFLDK2020_CS_PPR_DepthChart.csv")
@@ -192,6 +194,8 @@ espnADP[out,]$isOut <- 1
 
 espnADP[doubtful,]$Name <- str_sub(espnADP[doubtful,]$Name, 1, -2)
 espnADP[doubtful,]$isDoubtful <- 1
+
+espnADP
 ```
 
 Combine all past projections tables
@@ -448,7 +452,7 @@ for (i in 1:nrow(projections2021)) {
 projections2021$rank <- seq.int(nrow(projections2021))
 projections2021$year <- 2021
 
-#2021
+#2022
 projections2022$Name <- ""
 projections2022$team <- ""
 projections2022$position <- ""
@@ -471,6 +475,30 @@ for (i in 1:nrow(projections2022)) {
 }
 projections2022$rank <- seq.int(nrow(projections2022))
 projections2022$year <- 2022
+
+#2023
+projections2023$Name <- ""
+projections2023$team <- ""
+projections2023$position <- ""
+split_strings <- str_split(projections2023$`name team`, ",")
+split_strings2 <- str_split(projections2023$`position rank`, " ")
+i = 1
+for (i in 1:nrow(projections2023)) {
+  name <- split_strings[[i]][1]
+  team <- split_strings[[i]][2]
+  team <- str_sub(team, 2, -1)
+  
+  posRank <- split_strings2[[i]][2]
+  posRank <- str_sub(posRank, 2, -2)
+  position <- str_extract(posRank, '\\D*(?=\\d)')
+  position[position == "DEF"] <- "ST"
+  
+  projections2023$Name[i] <- name
+  projections2023$team[i] <- team
+  projections2023$position[i] <- position
+}
+projections2023$rank <- seq.int(nrow(projections2023))
+projections2023$year <- 2023
 
 ##FORMAT 
 ##NAME TEAM POSITION YEAR RANK
@@ -520,19 +548,33 @@ projections2021 <- projections2021 %>%
 projections2022 <- projections2022 %>% 
   select(Name, team, position, year, rank)
 
+projections2023 <- projections2023 %>% 
+  select(Name, team, position, year, rank)
 
-allProjections <- bind_rows(projections2010, projections2012, projections2013, projections2014, projections2015, projections2016, projections2017, projections2018, projections2019, projections2020, projections2021, projections2022)
+
+allProjections <- bind_rows(projections2010, projections2012, projections2013, projections2014, projections2015, projections2016, projections2017, projections2018, projections2019, projections2020, projections2021, projections2022, projections2023)
 ```
 
 ```{r}
 allProjections %>% 
-  filter(year == 2021)
+  filter(year == 2023)
 ```
 
 
 
 #Clean Depth Charts
 ```{r}
+#2023
+depthChart2023$Name <- ""
+splitty <- str_split(depthChart2023$`name rank`, "[[(]]")
+i <- 1
+for (i in 1:length(splitty)) {
+  name <- splitty[[i]][1]
+  name <- str_sub(name, 1, -2)
+  depthChart2023$Name[i] <- name
+}
+depthChart2023$year <- 2023
+
 #2022
 depthChart2022$Name <- ""
 splitty <- str_split(depthChart2022$`name rank`, "[[(]]")
@@ -669,7 +711,7 @@ depthChart2014 <- depthChart2014 %>% rename(depthChart = depthCharts) %>%  selec
 depthChart2012 <- depthChart2012 %>% rename(depthChart = depthCharts) %>%  select(Name, year, depthChart)
 depthChart2010 <- depthChart2010 %>% rename(depthChart = depthCharts) %>%  select(Name, year, depthChart)
 
-depthChartsAll <- bind_rows(depthChart2022, depthChart2021, depthChart2020, depthChart2019, depthChart2018, depthChart2017, depthChart2016, depthChart2015, depthChart2014, depthChart2012, depthChart2010)
+depthChartsAll <- bind_rows(depthChart2023, depthChart2022, depthChart2021, depthChart2020, depthChart2019, depthChart2018, depthChart2017, depthChart2016, depthChart2015, depthChart2014, depthChart2012, depthChart2010)
 ```
 
 
@@ -700,6 +742,7 @@ roster_2019 <- load_rosters(2019) %>% select(roster_columns)
 roster_2020 <- load_rosters(2020) %>% select(roster_columns)
 roster_2021 <- load_rosters(2021) %>% select(roster_columns)
 roster_2022 <- load_rosters(2022) %>% select(roster_columns)
+roster_2023 <- load_rosters(2023) %>% select(roster_columns)
 ```
 
 
@@ -750,6 +793,7 @@ pbp_2018 <- load_pbp(2018) %>% select(pbp_columns) %>% mutate(Season = 2018)
 pbp_2019 <- load_pbp(2019) %>% select(pbp_columns) %>% mutate(Season = 2019)
 pbp_2020 <- load_pbp(2020) %>% select(pbp_columns) %>% mutate(Season = 2020)
 pbp_2021 <- load_pbp(2021) %>% select(pbp_columns) %>% mutate(Season = 2021) 
+pbp_2022 <- load_pbp(2022) %>% select(pbp_columns) %>% mutate(Season = 2022)
 ```
 
 ```{r}
@@ -758,7 +802,7 @@ pbp_data <- bind_rows(pbp_2009, pbp_2010, pbp_2011,
                       pbp_2012, pbp_2013, pbp_2014,
                       pbp_2015, pbp_2016, pbp_2017,
                       pbp_2018, pbp_2019, pbp_2020,
-                      pbp_2021)
+                      pbp_2021, pbp_2022)
 
 pbp_data %>% 
   arrange(Season) %>% 
@@ -862,7 +906,7 @@ calc_passing_splits <- function(splits,pbp_df) {
               airEPA_per_Drive = airEPA_Comp / Drives,
               air_Success_Rate = length(which(air_epa>0)) / Attempts,
               air_Comp_Success_Rate = length(which((complete_pass*air_epa)>0)) / Attempts,
-              airWPA_Comp = sum(complete_pass*air_epa,na.rm = TRUE),
+              airWPA_Comp = sum(complete_pass*air_wpa,na.rm = TRUE),
               airWPA_Incomp = sum(as.numeric(complete_pass == 0)*air_wpa, na.rm = TRUE),
               Total_Raw_airWPA = sum(air_wpa,na.rm = TRUE),
               wpa_PACR = Total_WPA / Total_Raw_airWPA,
@@ -893,7 +937,6 @@ calc_passing_splits <- function(splits,pbp_df) {
               yac_Comp_Win_Success_Rate = length(which((complete_pass*yac_wpa)>0)) / Attempts)
   return(pass_output)
 }
-
 
 calc_rushing_splits <- function(splits,pbp_df) {
   split_groups <- lapply(splits, as.symbol)
@@ -978,6 +1021,7 @@ calc_receiving_splits <- function(splits,pbp_df) {
               AC_TDs_per_Drive = AC_TDs / Drives,
               AC_TD_Rate = AC_TDs / TDs,
               TD_to_Fumbles = TDs / Fumbles,
+              
               Total_EPA = sum(epa,na.rm=TRUE),
               EPA_per_Drives = Total_EPA / Drives,
               Success_Rate = length(which(epa>0)) / Targets,
@@ -1091,9 +1135,10 @@ allData <- allData %>%
     fantasy_points_8 = Total_Yards_8.x * rushYards + TDs_8.x * rushTD + Total_Yards_8.y * receivingYards + TDs_8.y * receivingTD + Receptions_8 * ppr + Total_Yards_8 * passYards + TDs_8 * passTD,
     fantasy_points_4 = Total_Yards_4.x * rushYards + TDs_4.x * rushTD + Total_Yards_4.y * receivingYards + TDs_4.y * receivingTD + Receptions_4 * ppr + Total_Yards_4 * passYards + TDs_4 * passTD)
 
+# Is 2023 supposed to be in here or is this only for previous years?
 rosters <- bind_rows(roster_2009, roster_2010, roster_2011, roster_2012,
                  roster_2013, roster_2014, roster_2015, roster_2016,
-                 roster_2017, roster_2018, roster_2019, roster_2020, roster_2021) %>% 
+                 roster_2017, roster_2018, roster_2019, roster_2020, roster_2021, roster_2022, roster_2023) %>% 
   rename(full_player_name = full_name)
 
 rosters <- rosters[!duplicated(rosters), ]
@@ -1260,18 +1305,18 @@ allData$nextSeasonsTeam <- apply(allData, 1, function(x) {
 allData$nextSeasonsTeam[is.na(allData$nextSeasonsTeam)] <- "FA"
 
 allData %>% 
-  filter(Season == 2019) %>% 
+  filter(Season == 2022) %>% 
   filter(full_player_name == 'Lamar Jackson')
 
 
 allData %>% 
-  filter(Season == 2021)
+  filter(Season == 2022)
 ```
 
 
 ```{r}
 allData %>% 
-  filter(grepl("Le'Veon", full_player_name)) %>% 
+  filter(grepl("Dak", full_player_name)) %>% 
   select(full_player_name, team, games_played, positive_weekly_PAR, weekly_PAR, fantasyPoints, fantasy_points_8, fantasy_points_4, nextSeasonsPoints, hasYearBefore)
 ```
 
@@ -1423,7 +1468,7 @@ combo <- combo %>%
          Name = coalesce(Name))
 
 
-#Find the people who have the fucking same name in the same year
+#Find the people who have the fucking same name in the same year LOL
 filters <- combo %>% group_by(Name, year) %>%
   dplyr::mutate(num_rows = n())
 
@@ -1581,13 +1626,13 @@ combo %>%
 
 Train, Test, and Pred Set Creation
 ```{r}
-season <- 2022
+season <- 2023
 
 combo2 <- combo %>%
   filter(position %in% c('RB', 'QB', 'WR', 'TE')) %>% 
   mutate(years_from_season = season - year) 
 
-
+# TODO Not sure what this line does or if it needs to be updated for the current year
 combo2[combo2$Name == 'JameisWinston' & combo2$year == 2020, ]$depthChart <-  'QB2'
 
 combo2 <- combo2[!is.na(combo2$position.y), ]
@@ -1745,16 +1790,25 @@ roundUp <- function(x,to=numberOfTeams)
 #Who's been drafted by everyone?
 ```{r}
 draftedOverall <- c(
-                    )
-
-
-
+  'justinjefferson','christianmccaffrey','tyreekhill','traviskelce','jamarrchase','austinekeler','cooperkupp','stefondiggs','bijanrobinson','ceedeelamb',
+  'saquonbarkley','amonrast','derrickhenry','patrickmahomes','davanteadams','ajbrown','jonathantaylor','nickchubb','jaylenwaddle','garrettwilson',
+  'joshjacobs','joshallen','rhamondrestevenson','teehiggins','jalenhurts','dkmetcalf','chrisolave','devontasmith','markandrews','tonypollard',
+  'deebosamuel','breecehall','joemixon','najeeharris','travisetienne','aaronjones','joeburrow','jahmyrgibbs','keenanallen','calvinridley',
+  'kennethwalker','deandrehopkins','lamarjackson','drakelondon','amaricooper','tjhockenson','djmoore','chrisgodwin','justinfields','georgekittle',
+  'terrymclaurin','dameonpierce','jerryjeudy','milessanders','alexandermattison','dallasgoedert','christianwatson','alvinkamara','dandreswift','trevorlawrence',
+  'kylepitts','darrenwaller','jkdobbins','camakers','michaelpittman','justinherbert','dalvincook','jamesconner','brandonaiyuk','christiankirk',
+  'dakprescott','marquisebrown','mikeevans','jordanaddison','tylerlockett','rachaadwhite','mikewilliams','davidmontgomery','isiahpacheco','javontewilliams',
+  'ajdillon','jaxonsmithnjigba','evanengram','georgepickens','jamescook','diontaejohnson','davidnjoku','daltonschultz','brandincooks','jahandotson',
+  'kadariustoney','michaelthomas','danieljones','treylonburks','antoniogibson','brianrobinson','elijahmoore','quentinjohnston','zachcharbonnet','deshaunwatson',
+  'jujusmithschuster','patfreiermuth','gabedavis','tuatagovailoa','jamaalwilliams','zayflowers','kirkcousins','genosmith','daltonkincaid','samajeperine',
+  'aaronrodgers','anthonyrichardson'
+)
 
 yourTeam <- c(
-              )
+  'ceedeelamb','derrickhenry','devontasmith','joemixon','chrisgodwin','jerryjeudy','jamesconner','mikeevans','daltonschultz','danieljones','genosmith'
+)
 
 ```
-
 
 
 #OPTIMIZER ALERT WEE WOO WEE WOO#
@@ -1854,7 +1908,7 @@ rbs <- t(apply(rbs, 2, min))
 wrs <- t(apply(wrs, 2, min))
 
 #get available players
-available <- copy[!copy$Name %in% draftedOverall,] %>% group_by(position) %>%  arrange(rank) %>% dplyr::slice(1:100)
+available <- copy[!tolower(copy$Name) %in% tolower(draftedOverall),] %>% group_by(position) %>%  arrange(rank) %>% dplyr::slice(1:100)
 
 j = 23
 j
@@ -2091,6 +2145,6 @@ projection = c(
 ```
 
 ```{r}
-write_csv(secondDataframe, "ranks_2021.csv")
+write_csv(secondDataframe, "ranks_2023.csv")
 ```
 
